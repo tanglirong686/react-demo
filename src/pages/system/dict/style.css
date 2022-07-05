@@ -1,0 +1,5 @@
+@import '~antd/dist/antd.css';
+
+.menu-form .ant-btn {
+    margin-right: 8px;
+}
