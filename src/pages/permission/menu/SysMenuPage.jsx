@@ -1,12 +1,11 @@
 import './style.css';
-import React, { useState } from "react";
-import { Form, Radio, Button, Input, Layout, Tree, Popconfirm, message } from 'antd';
+import React, { useEffect, useState } from "react";
+import { Form, Radio, Button, Input, Layout, Tree, message } from 'antd';
 import { CarryOutOutlined, FormOutlined } from '@ant-design/icons';
 
+import {getMenuById , getMenuTree ,saveMenuInfo ,deleteMenuInfo } from '../../../components/data/MenuRequestData.jsx';
 
 const { Sider, Content } = Layout;
-
-const { Search } = Input;
 
 const treeData = [
     {
@@ -117,62 +116,79 @@ const tailLayout = {
 };
 
 const SysMenuPage = () => {
+    // 菜单数据
+    const [menuData , setMenuData] = useState([]);
+
     const [showLine] = useState(true);
     const [showIcon] = useState(false);
     // 选择中的树节点
     const [selectedItem, setSelectedItem] = useState([]);
+    const [selectedKeys, setSelectedKeys] = useState([]);
     // 新增表单是否显示的控制，默认不显示表单
     const [isFormVisible, setIsFormVisible] = useState(true);
     // 定义一个链接表单对象
     const formRef = React.createRef();
-    // 删除确认框是否弹出，默认否
-    const [visible, setVisible] = useState(false);
 
-    // 删除确认
-    const confirm = () => {
-        setVisible(false);
-        message.success('Next step.');
+    // 初始化表格加载
+    useEffect(() => {
+        menuTreeData();
+    }, []);
+
+    // 字典树结构数据获取
+    const menuTreeData = ()=> {
+        getMenuTree()
+            .then((result)=>{
+                console.log(result);
+                setMenuData(result);
+            })
+            .catch(res=>{
+                message.error('菜单数据获取异常');
+            });
     };
-    // 删除取消
-    const cancel = () => {
-        setVisible(false);
-        message.error('Click on cancel.');
-    };
-    // 处理删除提示信息展示状态
-    const handleVisibleChange = (newVisible) => {
-        if (!newVisible) {
-            setVisible(newVisible);
-            return;
-        }
-    };
+
     // 树节点选中操作
-    const onSelect = (selectedKeys, info) => {
+    const onSelect = async (selectedKeys, info) => {
         // 选中数据
         if(selectedKeys && selectedKeys.length > 0){
             // 设置选中的数据
             setSelectedItem(info);
+            setSelectedKeys(selectedKeys);
             console.log('selectedKeys', selectedKeys);
+            // 通过id查询菜单
+            let data = await getMenuById({ 'menuId': selectedKeys[0] });
+            const menu = {
+                "menuName": data.menuName,
+                "menuCode": data.menuCode,
+                "menuUri": data.menuUri,
+                "menuIcon": data.menuIcon,
+                "used": ''+ data.used,
+                "hidden": ''+ data.hidden,
+            }
             // 设置表单可见
             setIsFormVisible(false);
-            formRef.current.setFieldsValue({
-                "menuName": "name",
-                "menuCode": "code",
-                "menuUri": "uri",
-                "menuIcon": "icon",
-                "used": "1",
-                "hidden": "0",
-            });
+            formRef.current.setFieldsValue(menu);
         }else{
             // 取消选中数据
             formRef.current.resetFields();
             // 置空选中
             setSelectedItem([]);
+            setSelectedKeys([]);
         }
+    };
+    // 新增
+    const addMenu = () => {
+        // 设置表单可见
+        setIsFormVisible(false);
+        formRef.current.resetFields();
     };
     // 保存
     const onFinish = (values) => {
-        console.log('Received values of form: ', values);
+        // 保存
+        saveMenuInfo(values);
+        // 重新加载树
+        menuTreeData();
     };
+    // 表单重置
     const onReset = () => {
         formRef.current.resetFields();
     };
@@ -182,19 +198,28 @@ const SysMenuPage = () => {
             // 选中节点
             if(selectedItem.selectedNodes && selectedItem.selectedNodes.length > 0){
                 console.log(selectedItem.node);
-                // 设置提示框可见
-                setVisible(true);
+                // 删除确认框
+                confirm({
+                    title: '角色删除',
+                    icon: <ExclamationCircleOutlined />,
+                    content: '该操作会删除数据，是否确认操作?',
+                    okText: '确认',
+                    okType: 'danger',
+                    cancelText: '取消',
+                    onOk() {
+                        // 进行删除
+                        deleteMenuInfo(selectedKeys);
+                        // 重新加载数据
+                        //handleTableChange(pagination);
+                        setSelectedItem([]);
+                    },
+                });
                 return;
             }
         }
         message.info('请选中左侧菜单数据');
     };
-    // 新增
-    const addMenu = () => {
-        // 设置表单可见
-        setIsFormVisible(false);
-        formRef.current.resetFields();
-    };
+    
     return (
         <Layout style={menuStyle}>
             <Sider className="menu-left" theme="light" >
@@ -203,7 +228,7 @@ const SysMenuPage = () => {
                     showIcon={showIcon}
                     defaultExpandedKeys={['0-0-0']}
                     onSelect={onSelect}
-                    treeData={treeData}
+                    treeData={menuData}
                 />
             </Sider>
             <Content className="menu-content" >
@@ -212,19 +237,9 @@ const SysMenuPage = () => {
                         <Button type="primary" onClick={addMenu} style={{ marginLeft: 8, marginBottom: 8, }}>
                             新增
                         </Button>
-                        <Popconfirm
-                            title="该操作会删除数据，是否确认操作?"
-                            visible={visible}
-                            onVisibleChange={handleVisibleChange}
-                            onConfirm={confirm}
-                            onCancel={cancel}
-                            okText="Yes"
-                            cancelText="No"
-                        >
-                            <Button type="danger" onClick={deleteMenu} style={{ marginLeft: 8, marginBottom: 8, }}>
-                                删除
-                            </Button>
-                        </Popconfirm>
+                        <Button type="danger" onClick={deleteMenu} style={{ marginLeft: 8, marginBottom: 8, }}>
+                            删除
+                        </Button>
                     </Form.Item>
                 </div>
                 <div>
@@ -248,14 +263,14 @@ const SysMenuPage = () => {
                         </Form.Item>
                         <Form.Item name="used" label="是否启用">
                             <Radio.Group>
-                                <Radio value="1">是</Radio>
-                                <Radio value="0">否</Radio>
+                                <Radio value="true">是</Radio>
+                                <Radio value="false">否</Radio>
                             </Radio.Group>
                         </Form.Item>
                         <Form.Item name="hidden" label="是否隐藏">
                             <Radio.Group>
-                                <Radio value="1">是</Radio>
-                                <Radio value="0">否</Radio>
+                                <Radio value="true">是</Radio>
+                                <Radio value="false">否</Radio>
                             </Radio.Group>
                         </Form.Item>
                         <Form.Item {...tailLayout} >
@@ -266,7 +281,6 @@ const SysMenuPage = () => {
                 </div>
             </Content>
         </Layout>
-
     );
 };
 

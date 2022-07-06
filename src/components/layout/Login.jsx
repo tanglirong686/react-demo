@@ -23,25 +23,25 @@ const Login = () => {
             userName: formValues.userName,
             password: formValues.password,
         };
-        // 设置登录成功
-        cookieUtil.add('logging',true);
-        // 临时写死的用户token
-        const token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOm51bGx9.PG4QF2a2H0jv-tYkq5AZ4cvQu4QCaPXLlVt_45VIlsI';
-        cookieUtil.add('token' ,token);
-        // 重定向到首页
-        navigate('/home');
-        // login(params).then(res => {
-        //     console.log(res)
-        //     if (res.code === 1) {
-        //         cookieUtil.add('token',res.data.token);
-        //         // 设置登录成功
-        //         cookieUtil.add('logging',true);
-        //         navigate('/home')
-        //         message.success(res.msg)
-        //     } else {
-        //         message.error(res.msg)
-        //     }
-        // })
+        // // 设置登录成功
+        // cookieUtil.add('logging',true);
+        // // 临时写死的用户token
+        // const token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOm51bGx9.PG4QF2a2H0jv-tYkq5AZ4cvQu4QCaPXLlVt_45VIlsI';
+        // cookieUtil.add('token' ,token);
+        // // 重定向到首页
+        // navigate('/home');
+        login(params).then(res => {
+            console.log(res)
+            if (res.code === 1) {
+                cookieUtil.add('token',res.data.token);
+                // 设置登录成功
+                cookieUtil.add('logging',true);
+                navigate('/home')
+                message.success(res.msg)
+            } else {
+                message.error(res.msg)
+            }
+        })
     };
     // 注册
     const regiesterFun = async () =>{
