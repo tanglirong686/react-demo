@@ -118,6 +118,8 @@ const tailLayout = {
 const SysMenuPage = () => {
     // 菜单数据
     const [menuData , setMenuData] = useState([]);
+    // 定义一个链接表单对象
+    const formRef = React.createRef();
 
     const [showLine] = useState(true);
     const [showIcon] = useState(false);
@@ -126,8 +128,6 @@ const SysMenuPage = () => {
     const [selectedKeys, setSelectedKeys] = useState([]);
     // 新增表单是否显示的控制，默认不显示表单
     const [isFormVisible, setIsFormVisible] = useState(true);
-    // 定义一个链接表单对象
-    const formRef = React.createRef();
 
     // 初始化表格加载
     useEffect(() => {
@@ -147,26 +147,13 @@ const SysMenuPage = () => {
     };
 
     // 树节点选中操作
-    const onSelect = async (selectedKeys, info) => {
+    const onSelect = (selectedKeys, info) => {
         // 选中数据
         if(selectedKeys && selectedKeys.length > 0){
             // 设置选中的数据
             setSelectedItem(info);
             setSelectedKeys(selectedKeys);
-            console.log('selectedKeys', selectedKeys);
-            // 通过id查询菜单
-            let data = await getMenuById({ 'menuId': selectedKeys[0] });
-            const menu = {
-                "menuName": data.menuName,
-                "menuCode": data.menuCode,
-                "menuUri": data.menuUri,
-                "menuIcon": data.menuIcon,
-                "used": ''+ data.used,
-                "hidden": ''+ data.hidden,
-            }
-            // 设置表单可见
-            setIsFormVisible(false);
-            formRef.current.setFieldsValue(menu);
+            getMenu(selectedKeys);
         }else{
             // 取消选中数据
             formRef.current.resetFields();
@@ -174,6 +161,23 @@ const SysMenuPage = () => {
             setSelectedItem([]);
             setSelectedKeys([]);
         }
+    };
+    // 选中编辑回显
+    const getMenu = async (param) =>{
+        // 通过id查询菜单
+        let data = await getMenuById({ 'menuId': param[0]});
+        const menu = {
+            "menuName": data.menuName,
+            "menuCode": data.menuCode,
+            "menuUri": data.menuUri,
+            "menuIcon": data.menuIcon,
+            "used": ''+ data.used,
+            "hidden": ''+ data.hidden,
+        }
+        console.log(formRef)
+        formRef.current.setFieldsValue(menu);
+        // 设置表单可见
+        setIsFormVisible(false);
     };
     // 新增
     const addMenu = () => {

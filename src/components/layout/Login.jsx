@@ -36,7 +36,7 @@ const Login = () => {
                 cookieUtil.add('token',res.data.token);
                 // 设置登录成功
                 cookieUtil.add('logging',true);
-                navigate('/home')
+                navigate('/home');
                 message.success(res.msg)
             } else {
                 message.error(res.msg)
